@@ -64,7 +64,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: Denken-3-shuu-Setup
+          name: Denken-3-shuu-GiaoVien-Setup
           path: release/*.exe
           if-no-files-found: error
           retention-days: 2

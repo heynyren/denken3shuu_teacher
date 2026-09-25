@@ -33,11 +33,14 @@ const DEV_URL = "http://localhost:5173";
  * `setName` thôi thì chưa chắc, vì nó chỉ có tác dụng nếu chạy trước lần đầu
  * đọc userData. Nên gọi thẳng `setPath` để đường dẫn là tuyệt đối tất định:
  *
- *   Windows  %APPDATA%\Denken 3-shuu\data.json
- *   macOS    ~/Library/Application Support/Denken 3-shuu/data.json
- *   Linux    ~/.config/Denken 3-shuu/data.json
+ *   Windows  %APPDATA%\Denken 3-shuu Giao vien\data.json
+ *   macOS    ~/Library/Application Support/Denken 3-shuu Giao vien/data.json
+ *   Linux    ~/.config/Denken 3-shuu Giao vien/data.json
+ *
+ * BẢN GIÁO VIÊN: tên thư mục PHẢI khác bản học sinh. Cài hai bản trên cùng một
+ * máy mà trùng tên là hai app thay nhau ghi đè một file data.json.
  */
-const DATA_DIR_NAME = "Denken 3-shuu";
+const DATA_DIR_NAME = "Denken 3-shuu Giao vien";
 app.setName(DATA_DIR_NAME);
 app.setPath("userData", path.join(app.getPath("appData"), DATA_DIR_NAME));
 

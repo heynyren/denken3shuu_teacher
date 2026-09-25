@@ -7,8 +7,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * chung một bản build giao diện, nên không có đường nào để tính năng lệch nhau.
  */
 const config: CapacitorConfig = {
-  appId: "com.heynyren.denken3shuu",
-  appName: "電験三種 Sổ ôn thi",
+  appId: "com.heynyren.denken3shuuteacher",
+  appName: "電験三種 Sổ ôn thi (GV)",
   webDir: "dist/renderer",
   android: {
     // Giao diện đã là dark mode sẵn; để nền tối ngay từ lúc khởi động cho khỏi

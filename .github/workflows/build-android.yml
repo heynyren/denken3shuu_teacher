@@ -84,7 +84,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           mkdir -p out
           cp android/app/build/outputs/apk/debug/app-debug.apk \
-             "out/Denken-3-shuu-$VERSION.apk"
+             "out/Denken-3-shuu-GiaoVien-$VERSION.apk"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       # APK chỉ 6 MB nên vẫn giữ cho từng commit — cài thử trên máy là việc làm
@@ -101,7 +101,7 @@ jobs:
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
-          name: Denken-3-shuu-APK
+          name: Denken-3-shuu-GiaoVien-APK
           path: out/*.apk
           if-no-files-found: error
           retention-days: 5

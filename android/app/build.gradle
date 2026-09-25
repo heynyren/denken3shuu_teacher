@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.heynyren.denken3shuu"
+    namespace "com.heynyren.denken3shuuteacher"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.heynyren.denken3shuu"
+        applicationId "com.heynyren.denken3shuuteacher"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Lấy từ package.json để bản Windows và bản Android luôn cùng số hiệu.

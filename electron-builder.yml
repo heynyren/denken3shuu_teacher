@@ -1,5 +1,5 @@
-appId: com.heynyren.denken3shuu
-productName: Denken 3-shuu
+appId: com.heynyren.denken3shuuteacher
+productName: Denken 3-shuu Giao vien
 copyright: Copyright © 2026 heynyren
 
 directories:
@@ -24,7 +24,7 @@ win:
     - target: nsis
       arch: [x64]
   icon: build/icon.ico
-  artifactName: Denken-3-shuu-Setup-${version}.${ext}
+  artifactName: Denken-3-shuu-GiaoVien-Setup-${version}.${ext}
 
 nsis:
   # Cài đè bản mới lên bản cũ: trình cài đặt tự gỡ bản cũ rồi cài bản mới,
@@ -34,7 +34,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: Denken 3-shuu
+  shortcutName: Denken 3-shuu (Giáo viên)
   # Gỡ cài đặt KHÔNG xoá thư mục dữ liệu người dùng: tiến độ học phải sống sót
   # qua mọi lần cài lại. Muốn xoá hẳn thì tự xoá thư mục trong AppData\Roaming.
   deleteAppDataOnUninstall: false
@@ -59,10 +59,10 @@ mac:
   # dòng này thì nó lục keychain của máy chạy rồi hỏng giữa chừng. Bản chưa ký
   # vẫn cài được, chỉ là macOS chặn lần mở đầu; cách qua nằm ở docs/MACOS.md.
   identity: null
-  artifactName: Denken-3-shuu-${version}-${arch}.${ext}
+  artifactName: Denken-3-shuu-GiaoVien-${version}-${arch}.${ext}
 
 dmg:
-  title: Denken 3-shuu ${version}
+  title: Denken 3-shuu Giao vien ${version}
   # Kéo app sang Applications — cửa sổ dmg quen thuộc của macOS.
   contents:
     - x: 140

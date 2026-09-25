@@ -1,4 +1,19 @@
-# 電験三種 — Sổ ôn thi
+# 電験三種 — Sổ ôn thi (Bản giáo viên)
+
+**Đây là bản GIÁO VIÊN**, fork từ [heynyren/Denken-3-shuu](https://github.com/heynyren/Denken-3-shuu).
+Lõi giống hệt bản học sinh, thêm hai chức năng chỉ dành cho người dạy:
+
+- **Ra đề hàng tháng** (nằm trong Cài đặt): trộn câu hỏi từ 25 kỳ thi thật thành
+  một đề mới theo đúng cấu trúc đề thật — từng vị trí câu lấy theo phần, độ khó
+  và dạng bài (tính toán / điền khuyết / luận) như lịch sử ra đề. Có chế độ giới
+  hạn theo các phần đã dạy trong tháng: app gợi ý phân bố số câu, sửa được rồi
+  mới trộn. Đề lưu trong app, copy ra Markdown kèm link đề gốc để đi biên soạn.
+- **Đánh dấu bài đã chữa theo lớp / niên khoá** (mặc định 2026-2027 và
+  2027-2028, lớp BK và ĐL-ĐN — thêm bớt trong Cài đặt): bài đã chữa có tích
+  riêng trong Danh sách bài, lọc được theo đã/chưa chữa.
+
+Bản giáo viên cài song song được với bản học sinh: tên gói, appId Android và
+thư mục dữ liệu đều tách riêng.
 
 App máy tính (Windows) để ôn thi 電験三種, dựng từ file Excel "Bài tập điện hạng 3 — Tổng hợp".
 
