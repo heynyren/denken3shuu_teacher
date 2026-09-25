@@ -68,7 +68,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ten.outputs.version }}
-          name: Denken 3-shuu v${{ steps.ten.outputs.version }}
+          name: Denken 3-shuu Giáo viên v${{ steps.ten.outputs.version }}
           files: release/*.dmg
 
       - name: Nhắc cách mở lần đầu
