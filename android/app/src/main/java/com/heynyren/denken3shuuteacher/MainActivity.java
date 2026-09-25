@@ -1,4 +1,4 @@
-package com.heynyren.denken3shuu;
+package com.heynyren.denken3shuuteacher;
 
 import com.getcapacitor.BridgeActivity;
 
