@@ -1,0 +1,74 @@
+appId: com.heynyren.denken3shuu
+productName: Denken 3-shuu
+copyright: Copyright © 2026 heynyren
+
+directories:
+  output: release
+  buildResources: build
+
+# Chỉ đóng gói phần đã build, không nhét cả mã nguồn và node_modules vào.
+files:
+  - dist/**/*
+  - package.json
+
+# Nén asar để khởi động nhanh hơn.
+asar: true
+
+# Trừ thư mục đề PDF. File trong asar không có đường dẫn thật trên đĩa, mà mở
+# đề bằng trình đọc của hệ điều hành thì phải trao cho nó một đường dẫn thật.
+asarUnpack:
+  - dist/renderer/de-thi/**
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+  artifactName: Denken-3-shuu-Setup-${version}.${ext}
+
+nsis:
+  # Cài đè bản mới lên bản cũ: trình cài đặt tự gỡ bản cũ rồi cài bản mới,
+  # người dùng KHÔNG cần tự gỡ trước. Chỉ cần đóng app đang chạy.
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Denken 3-shuu
+  # Gỡ cài đặt KHÔNG xoá thư mục dữ liệu người dùng: tiến độ học phải sống sót
+  # qua mọi lần cài lại. Muốn xoá hẳn thì tự xoá thư mục trong AppData\Roaming.
+  deleteAppDataOnUninstall: false
+
+linux:
+  target: [AppImage]
+  icon: build/icon.png
+  category: Education
+
+mac:
+  # Hai kiến trúc, hai file .dmg riêng thay vì một bản universal.
+  # Bản universal nhét cả hai vào một file: máy nào cũng chạy nhưng nặng gấp
+  # đôi (~250 MB) và một nửa số byte tải về là phần máy đó không bao giờ dùng.
+  # MacBook từ 2020 trở đi là arm64 (M1–M4); x64 để dành cho máy Intel cũ.
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  icon: build/icon.png
+  category: public.app-category.education
+  # Không có chứng chỉ Apple Developer (99 USD/năm) nên không ký chính danh.
+  # `null` là nói thẳng với electron-builder "đừng đi tìm chứng chỉ" — không có
+  # dòng này thì nó lục keychain của máy chạy rồi hỏng giữa chừng. Bản chưa ký
+  # vẫn cài được, chỉ là macOS chặn lần mở đầu; cách qua nằm ở docs/MACOS.md.
+  identity: null
+  artifactName: Denken-3-shuu-${version}-${arch}.${ext}
+
+dmg:
+  title: Denken 3-shuu ${version}
+  # Kéo app sang Applications — cửa sổ dmg quen thuộc của macOS.
+  contents:
+    - x: 140
+      y: 200
+      type: file
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications

@@ -1,0 +1,86 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "com.heynyren.denken3shuu"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.heynyren.denken3shuu"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Lấy từ package.json để bản Windows và bản Android luôn cùng số hiệu.
+        // versionCode phải là số nguyên tăng dần: 1.8.0 -> 10800.
+        versionCode project.hasProperty('versionCode') ? project.versionCode.toInteger() : 1
+        versionName project.hasProperty('versionName') ? project.versionName : "0.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Ký bằng khoá cố định của dự án.
+    //
+    // Bắt buộc phải cố định, không chỉ vì chuyện cập nhật app: client OAuth
+    // Android của Google khoá theo vân tay SHA-1 của khoá ký. APK gỡ lỗi được
+    // ký bằng khoá máy tự sinh — mỗi máy, mỗi lần chạy CI lại một khoá khác —
+    // nên SHA-1 đổi liên tục và đăng nhập Google sẽ hỏng ngay sau đó.
+    //
+    // Không có khoá thì vẫn build được (rơi về ký gỡ lỗi), chỉ là không đăng
+    // nhập Google được. Xem docs/DONG-BO-GOOGLE-DRIVE.md.
+    signingConfigs {
+        release {
+            if (project.hasProperty('DENKEN_KEYSTORE')) {
+                storeFile file(project.property('DENKEN_KEYSTORE'))
+                storePassword project.property('DENKEN_STORE_PASSWORD')
+                keyAlias project.property('DENKEN_KEY_ALIAS')
+                keyPassword project.property('DENKEN_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (project.hasProperty('DENKEN_KEYSTORE')) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            // Có khoá cố định thì dùng luôn cho bản gỡ lỗi, để SHA-1 của bản
+            // tải từ CI và bản build ở máy là một.
+            if (project.hasProperty('DENKEN_KEYSTORE')) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

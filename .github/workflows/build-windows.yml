@@ -1,0 +1,84 @@
+name: Build Windows installer
+
+# Chạy máy Windows thật để đóng gói, vì file .exe cần môi trường Windows.
+on:
+  # Nhánh phát triển được build qua pull_request, nên push chỉ cần bắt main và
+  # tag. Nếu bắt cả hai thì mỗi commit trong PR sẽ build hai lần trùng nhau.
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Đẩy commit mới thì huỷ luôn bản build của commit cũ trên cùng nhánh —
+# không ai cần bản cài đặt của commit vừa bị thay thế.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Cài đặt phụ thuộc
+        run: npm ci
+
+      - name: Kiểm tra kiểu dữ liệu
+        run: npm run typecheck
+
+      - name: Lấy số hiệu phiên bản
+        id: ten
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Đóng gói bản cài đặt
+        run: npm run pack:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Bản cài Windows nặng 110 MB, mà kho bản build của tài khoản miễn phí chỉ
+      # có 0,5 GB. Đẩy commit năm lần là hết chỗ — rồi mọi luồng build đỏ hết,
+      # không phải vì mã nguồn hỏng mà vì không tải lên được nữa.
+      #
+      # Nên mặc định KHÔNG giữ bản cài của từng commit. Cần bản cài thì có hai
+      # đường, cả hai đều không tích luỹ:
+      #   - Vào tab Actions bấm "Run workflow" — giữ 2 ngày, đủ để tải về.
+      #   - Đẩy tag `v*` — bản cài đính vào Releases, giữ mãi, kho riêng.
+      # Commit thường vẫn build đủ, để biết mã nguồn có hỏng hay không.
+      # `continue-on-error`: kho đầy là chuyện của cái kho, không phải lỗi của mã
+      # nguồn — đừng để nó làm đỏ cả luồng và chặn luôn bước tạo bản phát hành.
+      - name: Tải lên bản cài đặt
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Denken-3-shuu-Setup
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 2
+
+      # Hai lối vào, giống hệt hai luồng kia: đẩy tag `v*`, hoặc bấm Run workflow.
+      #
+      # Có lối thứ hai vì Releases nằm ở kho RIÊNG, không tính vào hạn mức 0,5 GB
+      # của kho bản build. Trước đây commit thường không giữ lại file nào để khỏi
+      # hết quota, nhưng như thế thì không còn đường nào lấy bản cài về — bấm Run
+      # workflow rồi tải từ Releases là đường vừa có file vừa không ăn quota.
+      - name: Tạo bản phát hành
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ten.outputs.version }}
+          name: Denken 3-shuu v${{ steps.ten.outputs.version }}
+          files: release/*.exe
