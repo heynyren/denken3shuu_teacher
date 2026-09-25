@@ -188,6 +188,8 @@ export function cacPhanCuaMon(
   const dem = new Map<string, number>();
   for (const it of items) {
     if (it.subject !== subject) continue;
+    // Vài bài cũ không ghi phần — không thành chip trống trong bảng chọn.
+    if (!it.category.trim()) continue;
     dem.set(it.category, (dem.get(it.category) ?? 0) + 1);
   }
   return [...dem.entries()]
