@@ -12,6 +12,8 @@
  * Hai bên nối nhau bằng `CatalogItem.id`.
  */
 
+import type { DeTao } from "./giao-vien/types";
+
 export type SubjectKey = "riron" | "denryoku" | "kikai" | "houki";
 
 export interface Subject {
@@ -176,6 +178,14 @@ export interface Settings {
    * còn tệ hơn là không có nút này.
    */
   uiLang?: "vi" | "en" | "ja";
+
+  /* ---- BẢN GIÁO VIÊN ---- */
+  /** Danh sách niên khoá, sửa được trong Cài đặt. */
+  teacherNienKhoa?: string[];
+  /** Danh sách lớp, sửa được trong Cài đặt. */
+  teacherLop?: string[];
+  /** Ngữ cảnh dạy hiện tại — mặc định cho tích "đã chữa" và bộ lọc. */
+  teacherContext?: { nienKhoa: string; lop: string };
 }
 
 /**
@@ -227,6 +237,13 @@ export interface AppData {
   /** id huy hiệu -> ngày đạt được (YYYY-MM-DD). */
   badges: Record<string, string>;
   examResults: ExamResult[];
+  /* ---- BẢN GIÁO VIÊN. Trường mới ở đây PHẢI nối vào normalise.ts,
+        sync.ts (mergeData) và kiem-thu-gop.ts, không thì đồng bộ lặng lẽ
+        vứt dữ liệu. ---- */
+  /** Đề thi thử đã trộn (Ra đề hàng tháng). */
+  deTao: DeTao[];
+  /** Bài đã chữa: id bài -> khoá "niênKhoá|lớp" -> ngày đánh dấu. */
+  daChua: Record<string, Record<string, string>>;
 }
 
 /** Kết quả sau một lần nhập từ Excel, để báo lại cho người dùng. */

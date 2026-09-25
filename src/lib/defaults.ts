@@ -14,13 +14,18 @@ import type { AppData, Settings } from "./types";
 // v4 thêm lịch sử thi thử.
 // v5 mỗi lượt thi lưu thêm bài làm từng câu (scores[].answers).
 // v6 thêm dấu sao do người dùng tự đánh (progress[].starred).
-export const SCHEMA_VERSION = 6;
+// v7 (bản giáo viên): thêm đề trộn (deTao) và đánh dấu bài đã chữa (daChua).
+export const SCHEMA_VERSION = 7;
 
 export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 30,
   examDate: "2027-03-21",
   backupsToKeep: 30,
   mirrorDir: "",
+  // Bản giáo viên: hai niên khoá × hai lớp có sẵn, sửa được trong Cài đặt.
+  teacherNienKhoa: ["2026-2027", "2027-2028"],
+  teacherLop: ["BK", "ĐL-ĐN"],
+  teacherContext: { nienKhoa: "2026-2027", lop: "BK" },
 };
 
 /** Sổ trắng cho lần chạy đầu tiên. */
@@ -35,5 +40,7 @@ export function emptyAppData(): AppData {
     dailyLog: {},
     badges: {},
     examResults: [],
+    deTao: [],
+    daChua: {},
   };
 }

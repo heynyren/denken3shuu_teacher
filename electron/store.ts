@@ -87,6 +87,8 @@ function buildFromSeed(): AppData {
     dailyLog: {},
     badges: {},
     examResults: [],
+    deTao: [],
+    daChua: {},
   };
 }
 

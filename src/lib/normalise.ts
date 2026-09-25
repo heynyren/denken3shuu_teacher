@@ -24,6 +24,7 @@ import type {
   LinkEntry,
   NoteEntry,
 } from "./types";
+import type { DeTao, DeTaoSlot } from "./giao-vien/types";
 
 export function emptyProgress(): ItemProgress {
   return {
@@ -179,6 +180,63 @@ function cleanExamResults(input: unknown): ExamResult[] {
   return out;
 }
 
+/** BẢN GIÁO VIÊN: lọc danh sách đề trộn về đúng hình dạng. */
+function cleanDeTao(input: unknown): DeTao[] {
+  if (!Array.isArray(input)) return [];
+  return input.flatMap((raw) => {
+    if (typeof raw !== "object" || raw === null) return [];
+    const e = raw as Partial<DeTao>;
+    if (typeof e.id !== "string" || !Array.isArray(e.slots)) return [];
+    if (
+      e.subject !== "riron" &&
+      e.subject !== "denryoku" &&
+      e.subject !== "kikai" &&
+      e.subject !== "houki"
+    ) {
+      return [];
+    }
+    const slots = e.slots.filter(
+      (s): s is DeTaoSlot =>
+        typeof s === "object" &&
+        s !== null &&
+        Number.isFinite((s as DeTaoSlot).no) &&
+        typeof (s as DeTaoSlot).itemId === "string",
+    );
+    if (slots.length === 0) return [];
+    const scopeCats =
+      typeof e.scope === "object" && e.scope !== null && Array.isArray(e.scope.categories)
+        ? e.scope.categories.filter((c): c is string => typeof c === "string")
+        : null;
+    return [
+      {
+        id: e.id,
+        createdAt:
+          typeof e.createdAt === "string" ? e.createdAt : new Date().toISOString(),
+        subject: e.subject,
+        thang: typeof e.thang === "string" ? e.thang : "",
+        ...(scopeCats && scopeCats.length > 0 ? { scope: { categories: scopeCats } } : {}),
+        slots,
+        note: typeof e.note === "string" ? e.note : "",
+      },
+    ];
+  });
+}
+
+/** BẢN GIÁO VIÊN: lọc bảng "đã chữa" — id bài -> khoá lớp -> ngày. */
+function cleanDaChua(input: unknown): Record<string, Record<string, string>> {
+  if (typeof input !== "object" || input === null) return {};
+  const out: Record<string, Record<string, string>> = {};
+  for (const [itemId, byContext] of Object.entries(input as Record<string, unknown>)) {
+    if (typeof byContext !== "object" || byContext === null) continue;
+    const clean: Record<string, string> = {};
+    for (const [ctx, date] of Object.entries(byContext as Record<string, unknown>)) {
+      if (typeof date === "string") clean[ctx] = date;
+    }
+    if (Object.keys(clean).length > 0) out[itemId] = clean;
+  }
+  return out;
+}
+
 /**
  * @param fallback Sổ trống dùng khi file thiếu hẳn phần nào đó. Trên Windows là
  *   sổ dựng từ seed.json, trên Android và lúc gộp file là sổ trắng.
@@ -233,6 +291,8 @@ export function normalise(input: unknown, fallback: AppData): AppData {
     dailyLog,
     badges: raw.badges ?? {},
     examResults: cleanExamResults(raw.examResults),
+    deTao: cleanDeTao(raw.deTao),
+    daChua: cleanDaChua(raw.daChua),
   };
 }
 

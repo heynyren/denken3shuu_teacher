@@ -1,6 +1,6 @@
 /* Kiểm thử luật gộp dữ liệu hai máy, đồng bộ GitHub, chuông báo hết giờ. */
 import { syncOnce } from "../src/lib/cloud";
-import { SCHEMA_VERSION } from "../src/lib/defaults";
+import { DEFAULT_SETTINGS, SCHEMA_VERSION } from "../src/lib/defaults";
 import type { SyncConfig } from "../src/lib/cloud";
 import type { FetchLike } from "../src/lib/github";
 import { fromBase64, toBase64, validRepo } from "../src/lib/github";
@@ -32,11 +32,15 @@ function blank(): AppData {
     schemaVersion: SCHEMA_VERSION,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
-    settings: { dailyGoal: 30, mirrorDir: "", examDate: "2027-03-21", backupsToKeep: 30 },
+    // Cài đặt cũng lấy từ defaults: bản giáo viên có thêm niên khoá/lớp mặc
+    // định, gõ tay thiếu trường là fixture "khác" bản đi qua normalise() mãi.
+    settings: { ...DEFAULT_SETTINGS },
     progress: {},
     dailyLog: {},
     badges: {},
     examResults: [],
+    deTao: [],
+    daChua: {},
   };
 }
 
@@ -106,6 +110,72 @@ const ANSWERS_KT = (answersKT as { answers: Record<string, number[]> }).answers;
   const { data } = mergeData(base, pc, phone);
   check(!data.progress["a"].srsExcluded,
     "bản ghi mới hơn không có cờ: cờ loại khỏi SRS bị cuốn theo (như `starred`)");
+}
+
+/* ---- 2c. BẢN GIÁO VIÊN: đề trộn đi qua đồng bộ như lượt thi ---- */
+{
+  const deMau = (id: string, createdAt: string) => ({
+    id, createdAt, subject: "kikai" as const, thang: "Tháng 10/2026",
+    slots: [{ no: 1, itemId: "kikai:kikair8-1-1" }], note: "",
+  });
+
+  // Trộn đề trên máy tính: điện thoại phải nhận được.
+  const base = blank();
+  const pc = clone(base);
+  const phone = clone(base);
+  pc.deTao.push(deMau("de1", "2026-10-01T00:00:00Z"));
+  const first = mergeData(base, pc, phone);
+  check(first.data.deTao.length === 1, "đề trộn ở một máy: máy kia nhận được sau khi gộp");
+
+  // Xoá đề sau khi đã đồng bộ: không được mọc lại.
+  const merged = first.data;
+  const pc2 = clone(merged);
+  pc2.deTao = [];
+  const second = mergeData(merged, pc2, clone(merged));
+  check(second.data.deTao.length === 0, "xoá đề đã đồng bộ: không mọc lại sau lần gộp sau");
+}
+
+/* ---- 2d. BẢN GIÁO VIÊN: dấu "đã chữa" — thêm, bỏ, và trùng hai máy ---- */
+{
+  // Đánh dấu ở một máy: máy kia nhận được.
+  const base = blank();
+  const pc = clone(base);
+  const phone = clone(base);
+  pc.daChua["kikai:kikair8-1-5"] = { "2026-2027|BK": "2026-10-03" };
+  const first = mergeData(base, pc, phone);
+  check(first.data.daChua["kikai:kikair8-1-5"]?.["2026-2027|BK"] === "2026-10-03",
+    "đã chữa đánh ở một máy: máy kia nhận được");
+
+  // Bỏ đánh dấu (bấm nhầm) sau khi đã đồng bộ: phải được tôn trọng.
+  const merged = first.data;
+  const pc2 = clone(merged);
+  delete pc2.daChua["kikai:kikair8-1-5"];
+  const second = mergeData(merged, pc2, clone(merged));
+  check(!second.data.daChua["kikai:kikair8-1-5"],
+    "bỏ đánh dấu đã chữa: không mọc lại sau lần gộp sau");
+
+  // Hai máy cùng đánh một bài cho cùng một lớp: giữ ngày sớm hơn.
+  const base3 = blank();
+  const pc3 = clone(base3);
+  const phone3 = clone(base3);
+  pc3.daChua["a"] = { "2026-2027|BK": "2026-10-05" };
+  phone3.daChua["a"] = { "2026-2027|BK": "2026-10-02" };
+  const third = mergeData(base3, pc3, phone3);
+  check(third.data.daChua["a"]?.["2026-2027|BK"] === "2026-10-02",
+    "hai máy cùng đánh một bài: giữ ngày sớm hơn (buổi chữa thật)");
+
+  // Cùng một bài nhưng hai lớp khác nhau: cả hai dấu đều còn.
+  const base4 = blank();
+  const pc4 = clone(base4);
+  const phone4 = clone(base4);
+  pc4.daChua["a"] = { "2026-2027|BK": "2026-10-05" };
+  phone4.daChua["a"] = { "2026-2027|ĐL-ĐN": "2026-10-06" };
+  const fourth = mergeData(base4, pc4, phone4);
+  check(
+    fourth.data.daChua["a"]?.["2026-2027|BK"] === "2026-10-05" &&
+      fourth.data.daChua["a"]?.["2026-2027|ĐL-ĐN"] === "2026-10-06",
+    "một bài chữa ở hai lớp: hai dấu sống chung, không đè nhau",
+  );
 }
 
 /* ---- 3. dailyLog: cộng phần mới, KHÔNG nhân đôi qua nhiều lần đồng bộ ---- */

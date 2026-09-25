@@ -36,6 +36,7 @@ import type {
   Settings,
   SubjectKey,
 } from "./types";
+import type { DeTao } from "./giao-vien/types";
 
 export interface MergeReport {
   /** Bài lấy theo máy này / theo máy kia. */
@@ -46,6 +47,10 @@ export interface MergeReport {
   badgesAdded: number;
   examsAdded: number;
   examsRemoved: number;
+  /* BẢN GIÁO VIÊN */
+  deTaoAdded: number;
+  deTaoRemoved: number;
+  daChuaAdded: number;
   settingsFrom: "local" | "remote" | "same";
   /** Bài sửa ở cả hai bên kể từ lần đồng bộ trước — bên mới hơn thắng. */
   conflicts: string[];
@@ -313,8 +318,32 @@ function mergeSettings(
    * khác, và hậu quả không nhỏ: mỗi máy đều tưởng cài đặt của mình mới hơn, nên
    * cứ năm phút lại ghi đè lẫn nhau một lần, không bao giờ dừng.
    */
+  /**
+   * BẢN GIÁO VIÊN: cài đặt có thêm mảng (niên khoá, lớp) và object (ngữ cảnh
+   * dạy). So `===` với chúng là luôn "khác" sau mỗi lần đọc file — đúng cái
+   * vòng ghi đè năm-phút-một-lần mà ghi chú trên đây cảnh báo. Nên so theo
+   * GIÁ TRỊ: mảng so từng phần tử theo thứ tự, object con so từng khoá.
+   */
+  const bangGiaTri = (a: unknown, b: unknown): boolean => {
+    if (a === b) return true;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.length === b.length && a.every((x, i) => bangGiaTri(x, b[i]));
+    }
+    if (
+      typeof a === "object" && a !== null &&
+      typeof b === "object" && b !== null
+    ) {
+      const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+      return [...keys].every((k) =>
+        bangGiaTri((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+      );
+    }
+    return false;
+  };
   const same = (a: Settings, b: Settings) =>
-    (Object.keys({ ...a, ...b }) as (keyof Settings)[]).every((key) => a[key] === b[key]);
+    (Object.keys({ ...a, ...b }) as (keyof Settings)[]).every((key) =>
+      bangGiaTri(a[key], b[key]),
+    );
 
   if (same(local, remote)) {
     report.settingsFrom = "same";
@@ -327,6 +356,93 @@ function mergeSettings(
   report.settingsFrom = "local";
   // mirrorDir là đường dẫn trên đĩa của MÁY NÀY, mang sang máy kia là vô nghĩa.
   return { ...local, mirrorDir: local.mirrorDir };
+}
+
+/* ------------------------------------------------------------------ */
+/* BẢN GIÁO VIÊN: đề trộn và bảng "đã chữa"                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Đề trộn gộp theo `id`, cùng luật với lịch sử thi (`mergeExams`): đề nào có
+ * trong `base` mà một bên đã xoá thì tôn trọng việc xoá, không cho mọc lại.
+ */
+function mergeDeTao(
+  base: DeTao[],
+  local: DeTao[],
+  remote: DeTao[],
+  hasBase: boolean,
+  report: MergeReport,
+): DeTao[] {
+  const baseIds = new Set(base.map((entry) => entry.id));
+  const localIds = new Set(local.map((entry) => entry.id));
+  const remoteIds = new Set(remote.map((entry) => entry.id));
+
+  const out = new Map<string, DeTao>();
+  for (const entry of [...remote, ...local]) {
+    if (hasBase && baseIds.has(entry.id)) {
+      const deleted = !localIds.has(entry.id) || !remoteIds.has(entry.id);
+      if (deleted) {
+        report.deTaoRemoved += 1;
+        continue;
+      }
+    }
+    if (!out.has(entry.id)) out.set(entry.id, entry);
+  }
+
+  report.deTaoAdded = [...out.keys()].filter((id) => !remoteIds.has(id)).length;
+  return [...out.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/**
+ * Bảng "đã chữa" gộp theo từng cặp (bài, lớp):
+ *  - đánh dấu chỉ có thêm như huy hiệu, hai máy cùng đánh thì giữ NGÀY SỚM HƠN
+ *    (buổi chữa thật là buổi sớm);
+ *  - nhưng BỎ đánh dấu (giáo viên bấm nhầm rồi bỏ) là việc xoá có chủ ý, phải
+ *    tôn trọng như `mergeExams` — có `base` mới phân biệt được "bên kia chưa
+ *    từng có" với "bên kia vừa bỏ".
+ */
+function mergeDaChua(
+  base: Record<string, Record<string, string>>,
+  local: Record<string, Record<string, string>>,
+  remote: Record<string, Record<string, string>>,
+  hasBase: boolean,
+  report: MergeReport,
+): Record<string, Record<string, string>> {
+  const flat = (m: Record<string, Record<string, string>>) => {
+    const out = new Map<string, string>();
+    for (const [id, byCtx] of Object.entries(m))
+      for (const [ctx, day] of Object.entries(byCtx)) out.set(`${id}::${ctx}`, day);
+    return out;
+  };
+  const baseF = flat(base);
+  const localF = flat(local);
+  const remoteF = flat(remote);
+
+  const outF = new Map<string, string>();
+  for (const key of new Set([...localF.keys(), ...remoteF.keys()])) {
+    if (hasBase && baseF.has(key) && (!localF.has(key) || !remoteF.has(key))) {
+      continue; // một bên vừa bỏ đánh dấu — tôn trọng việc bỏ
+    }
+    const here = localF.get(key);
+    const there = remoteF.get(key);
+    const day =
+      here !== undefined && there !== undefined
+        ? here < there
+          ? here
+          : there
+        : (here ?? there)!;
+    outF.set(key, day);
+    if (!remoteF.has(key)) report.daChuaAdded += 1;
+  }
+
+  const out: Record<string, Record<string, string>> = {};
+  for (const [key, day] of outF) {
+    const idx = key.indexOf("::");
+    const itemId = key.slice(0, idx);
+    const ctx = key.slice(idx + 2);
+    (out[itemId] ??= {})[ctx] = day;
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
@@ -345,6 +461,9 @@ export function mergeData(
     badgesAdded: 0,
     examsAdded: 0,
     examsRemoved: 0,
+    deTaoAdded: 0,
+    deTaoRemoved: 0,
+    daChuaAdded: 0,
     settingsFrom: "same",
     conflicts: [],
   };
@@ -374,6 +493,8 @@ export function mergeData(
       hasBase,
       report,
     ),
+    deTao: mergeDeTao(base?.deTao ?? [], local.deTao, remote.deTao, hasBase, report),
+    daChua: mergeDaChua(base?.daChua ?? {}, local.daChua, remote.daChua, hasBase, report),
   };
 
   return { data, report };
@@ -386,6 +507,8 @@ export function describeMerge(report: MergeReport): string {
   if (report.daysMerged > 0) parts.push(`${report.daysMerged} ngày được cộng thêm`);
   if (report.badgesAdded > 0) parts.push(`${report.badgesAdded} huy hiệu`);
   if (report.examsAdded > 0) parts.push(`${report.examsAdded} lượt thi`);
+  if (report.deTaoAdded > 0) parts.push(`${report.deTaoAdded} đề trộn`);
+  if (report.daChuaAdded > 0) parts.push(`${report.daChuaAdded} dấu đã chữa`);
   if (parts.length === 0) return "Hai bên đã giống nhau, không có gì để gộp.";
   return "Đã gộp: " + parts.join(" · ");
 }
