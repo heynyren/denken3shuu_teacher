@@ -3,6 +3,7 @@ import {
   Bookmark,
   Check,
   CircleDashed,
+  GraduationCap,
   Link2,
   Paperclip,
   RotateCcw,
@@ -25,6 +26,7 @@ import { isDue, overdueDays, todayISO } from "../lib/srs";
 import type { CatalogItem, ItemStatus, SubjectKey } from "../lib/types";
 import type { Store } from "../state/useStore";
 import { haystackOf, highlight, matchesQuery, topicVi, trichDoan } from "../lib/vi";
+import { khoaLop, tachKhoaLop } from "../lib/giao-vien/types";
 
 import { t, t2 } from "../lib/chu";
 /** Chiều cao cố định mỗi dòng — cần cho phép tính cuộn ảo. */
@@ -40,7 +42,7 @@ const ROW_HEIGHT = 84;
 /** Vẽ dư vài dòng ngoài khung nhìn để cuộn nhanh không thấy khoảng trắng. */
 const OVERSCAN = 6;
 
-type StatusFilter = ItemStatus | "all" | "due" | "starred";
+type StatusFilter = ItemStatus | "all" | "due" | "starred" | "daChua" | "chuaChua";
 
 const STATUS_FILTERS: Array<{
   key: StatusFilter;
@@ -54,6 +56,9 @@ const STATUS_FILTERS: Array<{
   { key: "relearned", label: "Sai → Đúng", icon: RotateCcw },
   { key: "correct", label: "Đúng", icon: Check },
   { key: "starred", label: "Đánh dấu sao", icon: Star },
+  // BẢN GIÁO VIÊN: lọc theo tích "đã chữa" của lớp đang dạy (chọn trong Cài đặt).
+  { key: "daChua", label: "Đã chữa", icon: GraduationCap },
+  { key: "chuaChua", label: "Chưa chữa", icon: CircleDashed },
 ];
 
 export default function Browse({
@@ -102,6 +107,13 @@ export default function Browse({
         if (!isDue(progress, today)) return false;
       } else if (status === "starred") {
         if (!progress?.starred) return false;
+      } else if (status === "daChua" || status === "chuaChua") {
+        // BẢN GIÁO VIÊN: soi theo lớp đang dạy (Cài đặt → Niên khoá & lớp).
+        const bc = data.settings.teacherContext;
+        const daChua = bc
+          ? !!data.daChua[item.id]?.[khoaLop(bc.nienKhoa, bc.lop)]
+          : false;
+        if (status === "daChua" ? !daChua : daChua) return false;
       } else if (status !== "all") {
         if ((progress?.status ?? "todo") !== status) return false;
       }
@@ -116,7 +128,7 @@ export default function Browse({
       }
       return true;
     });
-  }, [data.progress, subject, topic, status, stars, query, today]);
+  }, [data.progress, data.daChua, data.settings.teacherContext, subject, topic, status, stars, query, today]);
 
   /* ------------------------- cuộn ảo ------------------------- */
 
@@ -473,6 +485,22 @@ function Row({
   const late = overdueDays(progress, today);
   const due = isDue(progress, today);
 
+  // BẢN GIÁO VIÊN: tích "đã chữa" — sáng khi đã chữa cho lớp đang dạy, tooltip
+  // liệt kê đủ mọi lớp đã chữa bài này.
+  const daChuaCuaBai = store.data!.daChua[item.id];
+  const boiCanh = store.data!.settings.teacherContext;
+  const daChuaLopNay = !!(
+    boiCanh && daChuaCuaBai?.[khoaLop(boiCanh.nienKhoa, boiCanh.lop)]
+  );
+  const daChuaTatCa = daChuaCuaBai
+    ? Object.entries(daChuaCuaBai)
+        .map(([khoa, ngay]) => {
+          const { nienKhoa, lop } = tachKhoaLop(khoa);
+          return `${nienKhoa} · ${lop} (${ngay})`;
+        })
+        .join(", ")
+    : "";
+
   // Ghi chú nào chứa câu đang tìm; lấy đoạn quanh chỗ khớp để hiện trong dòng.
   const khopGhiChu = (() => {
     const needle = query.trim();
@@ -548,6 +576,14 @@ function Row({
       {progress?.srsExcluded && (
         <span className="pill excluded" title={t("Đã loại khỏi SRS")}>
           <Ic i={BellOff} className="h-3 w-3" />
+        </span>
+      )}
+      {daChuaTatCa && (
+        <span
+          className={`pill da-chua${daChuaLopNay ? " lop-nay" : ""}`}
+          title={t2("Đã chữa: {ds}", { ds: daChuaTatCa })}
+        >
+          <Ic i={GraduationCap} className="h-3 w-3" />
         </span>
       )}
       <StatusPill status={progress?.status ?? "todo"} />

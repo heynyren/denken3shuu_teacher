@@ -37,12 +37,15 @@ export default function Settings({
   view,
   sync,
   onAbout,
+  onOpenRaDe,
 }: {
   store: Store;
   view: Overview;
   sync: Sync;
   /** Thanh bên bị ẩn trên điện thoại, nên phần giới thiệu vào đây. */
   onAbout(): void;
+  /** BẢN GIÁO VIÊN: mở hộp trộn đề hàng tháng. */
+  onOpenRaDe(): void;
 }) {
   const data = store.data!;
   const info = store.info;
@@ -551,6 +554,79 @@ export default function Settings({
           ))}
         </div>
       </div>
+      {/* ---------------- BẢN GIÁO VIÊN ---------------- */}
+      <div className="card">
+        <div className="card-head">
+          <div className="card-title">{t("Ra đề hàng tháng")}</div>
+        </div>
+        <p className="muted small">
+          {t("Trộn câu hỏi từ 25 kỳ thi thật thành một đề mới theo đúng cấu trúc đề thật: từng vị trí câu lấy theo phần, độ khó và dạng bài như lịch sử ra đề. Có chế độ chỉ lấy trong các phần đã dạy trong tháng — app gợi ý phân bố số câu, sửa được rồi mới trộn. Đề lưu lại được và copy ra Markdown kèm link đề gốc.")}
+        </p>
+        <button className="btn primary" style={{ marginTop: 8 }} onClick={onOpenRaDe}>
+          {t("Mở trộn đề")}
+        </button>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <div className="card-title">{t("Niên khoá & lớp")}</div>
+        </div>
+        <p className="muted small">
+          {t("Dùng cho tích “đã chữa” trong Danh sách bài. Xoá một niên khoá/lớp không xoá dấu đã đánh — thêm lại là thấy lại.")}
+        </p>
+        <DanhSachSua
+          label={t("Niên khoá")}
+          values={data.settings.teacherNienKhoa ?? []}
+          placeholder="2028-2029"
+          onChange={(values) => store.updateSettings({ teacherNienKhoa: values })}
+        />
+        <DanhSachSua
+          label={t("Lớp")}
+          values={data.settings.teacherLop ?? []}
+          placeholder={t("Tên lớp")}
+          onChange={(values) => store.updateSettings({ teacherLop: values })}
+        />
+        <div className="row wrap" style={{ gap: 8, marginTop: 10 }}>
+          <span className="field-label">{t("Đang dạy:")}</span>
+          <select
+            className="select"
+            value={data.settings.teacherContext?.nienKhoa ?? ""}
+            onChange={(event) =>
+              store.updateSettings({
+                teacherContext: {
+                  nienKhoa: event.target.value,
+                  lop: data.settings.teacherContext?.lop ?? "",
+                },
+              })
+            }
+          >
+            {(data.settings.teacherNienKhoa ?? []).map((nk) => (
+              <option key={nk} value={nk}>
+                {nk}
+              </option>
+            ))}
+          </select>
+          <select
+            className="select"
+            value={data.settings.teacherContext?.lop ?? ""}
+            onChange={(event) =>
+              store.updateSettings({
+                teacherContext: {
+                  nienKhoa: data.settings.teacherContext?.nienKhoa ?? "",
+                  lop: event.target.value,
+                },
+              })
+            }
+          >
+            {(data.settings.teacherLop ?? []).map((lop) => (
+              <option key={lop} value={lop}>
+                {lop}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Ghi công tác giả, đặt ở cuối Cài đặt và hiện trên MỌI cỡ màn hình.
           Trước đây khối này mang class only-mobile nên bản máy tính không thấy
           — ở đó nó chỉ là một nút nhỏ nép cuối thanh bên. */}
@@ -573,6 +649,63 @@ export default function Settings({
         </p>
       </div>
 
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* BẢN GIÁO VIÊN: danh sách chuỗi sửa được (niên khoá, lớp)            */
+/* ------------------------------------------------------------------ */
+
+function DanhSachSua({
+  label,
+  values,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  values: string[];
+  placeholder: string;
+  onChange(values: string[]): void;
+}) {
+  const [moi, setMoi] = useState("");
+
+  const them = () => {
+    const ten = moi.trim();
+    if (!ten || values.includes(ten)) return;
+    onChange([...values, ten]);
+    setMoi("");
+  };
+
+  return (
+    <div className="row wrap" style={{ gap: 8, marginTop: 10 }}>
+      <span className="field-label" style={{ minWidth: 76 }}>{label}</span>
+      {values.map((ten) => (
+        <span key={ten} className="chip on">
+          {ten}
+          <button
+            className="icon-btn"
+            style={{ marginLeft: 4 }}
+            title={t2("Xoá {ten}", { ten })}
+            onClick={() => onChange(values.filter((v) => v !== ten))}
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      <input
+        className="input"
+        style={{ maxWidth: 140 }}
+        placeholder={placeholder}
+        value={moi}
+        onChange={(event) => setMoi(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") them();
+        }}
+      />
+      <button className="btn sm" onClick={them} disabled={!moi.trim()}>
+        {t("+ Thêm")}
+      </button>
     </div>
   );
 }

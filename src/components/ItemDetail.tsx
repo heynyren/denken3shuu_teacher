@@ -9,7 +9,9 @@ import {
   AlertTriangle,
   Bell,
   BellOff,
+  Check,
   FileText,
+  GraduationCap,
   Image as ImageIcon,
   Link2,
   Paperclip,
@@ -21,6 +23,7 @@ import { Ic, type IconType } from "./ui/icon";
 import { useEffect, useRef, useState } from "react";
 
 import { levelLabel, overdueDays, todayISO } from "../lib/srs";
+import { khoaLop } from "../lib/giao-vien/types";
 import type { Attachment, CatalogItem, ItemProgress, NoteEntry } from "../lib/types";
 import type { Store } from "../state/useStore";
 import { Stars, StatusPill, openLink } from "./ui";
@@ -472,6 +475,38 @@ export default function ItemDetail({
 
         <div className="field-hint" style={{ marginTop: 8 }}>
           {t("Link bài tập đi kèm app, còn ghi chú và link tham khảo là của riêng bạn — cập nhật app không làm mất phần này.")}
+        </div>
+      </div>
+
+      {/* ---------------- BẢN GIÁO VIÊN: đã chữa trong lớp ---------------- */}
+      <div>
+        <div className="row between" style={{ marginBottom: 8 }}>
+          <span className="field-label">
+            <Ic i={GraduationCap} /> {t("Đã chữa trong lớp")}
+          </span>
+        </div>
+        <div className="chip-row">
+          {(store.data!.settings.teacherNienKhoa ?? []).flatMap((nienKhoa) =>
+            (store.data!.settings.teacherLop ?? []).map((lop) => {
+              const ngay = store.data!.daChua[item.id]?.[khoaLop(nienKhoa, lop)];
+              return (
+                <button
+                  key={khoaLop(nienKhoa, lop)}
+                  className={`chip${ngay ? " on" : ""}`}
+                  onClick={() => store.setDaChua(item.id, nienKhoa, lop, !ngay)}
+                  title={
+                    ngay
+                      ? t2("Đã chữa ngày {ngay} — bấm để bỏ đánh dấu", { ngay })
+                      : t("Bấm khi đã chữa bài này cho lớp")
+                  }
+                >
+                  {ngay && <Ic i={Check} className="h-3.5 w-3.5" />}
+                  {nienKhoa} · {lop}
+                  {ngay && <span className="dim"> {ngay}</span>}
+                </button>
+              );
+            }),
+          )}
         </div>
       </div>
 

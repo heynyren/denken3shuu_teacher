@@ -23,6 +23,8 @@ import type {
   Settings,
   StoreInfo,
 } from "../lib/types";
+import type { DeTao } from "../lib/giao-vien/types";
+import { khoaLop } from "../lib/giao-vien/types";
 
 /** Chờ 600ms sau thao tác cuối mới ghi, tránh ghi đĩa liên tục khi gõ ghi chú. */
 const SAVE_DELAY_MS = 600;
@@ -61,6 +63,13 @@ export interface Store {
   updateSettings(patch: Partial<Settings>): void;
   saveExamResult(result: ExamResult): void;
   removeExamResult(id: string): void;
+
+  /* ---- BẢN GIÁO VIÊN ---- */
+  /** Lưu một đề trộn (Ra đề hàng tháng). */
+  saveDeTao(entry: DeTao): void;
+  removeDeTao(id: string): void;
+  /** Đánh dấu / bỏ đánh dấu "đã chữa bài này cho lớp X niên khoá Y". */
+  setDaChua(id: string, nienKhoa: string, lop: string, value: boolean): void;
 
   reload(): Promise<void>;
   replaceAll(data: AppData): void;
@@ -435,6 +444,42 @@ export function useStore(): Store {
     [update],
   );
 
+  /* ---- BẢN GIÁO VIÊN ---- */
+
+  const saveDeTao = useCallback(
+    (entry: DeTao) =>
+      // Đề là danh sách id, rất nhẹ — 200 đề vẫn nhỏ hơn một lượt thi có answers.
+      update((current) => ({
+        ...current,
+        deTao: [...current.deTao, entry].slice(-200),
+      })),
+    [update],
+  );
+
+  const removeDeTao = useCallback(
+    (id: string) =>
+      update((current) => ({
+        ...current,
+        deTao: current.deTao.filter((entry) => entry.id !== id),
+      })),
+    [update],
+  );
+
+  const setDaChua = useCallback(
+    (id: string, nienKhoa: string, lop: string, value: boolean) =>
+      update((current) => {
+        const khoa = khoaLop(nienKhoa, lop);
+        const cuaBai = { ...(current.daChua[id] ?? {}) };
+        if (value) cuaBai[khoa] = todayISO();
+        else delete cuaBai[khoa];
+        const daChua = { ...current.daChua };
+        if (Object.keys(cuaBai).length > 0) daChua[id] = cuaBai;
+        else delete daChua[id];
+        return { ...current, daChua };
+      }),
+    [update],
+  );
+
   const replaceAll = useCallback(
     (incoming: AppData) => {
       setData(incoming);
@@ -470,6 +515,9 @@ export function useStore(): Store {
     updateSettings,
     saveExamResult,
     removeExamResult,
+    saveDeTao,
+    removeDeTao,
+    setDaChua,
     reload,
     replaceAll,
     flush,

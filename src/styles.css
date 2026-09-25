@@ -978,6 +978,16 @@ mark.hit {
   background: var(--surface-3);
   color: var(--text-3);
 }
+/* BẢN GIÁO VIÊN: tích "đã chữa". Sáng xanh khi là lớp đang dạy, trầm khi chỉ
+   lớp khác từng chữa. */
+.pill.da-chua {
+  background: var(--surface-3);
+  color: var(--text-3);
+}
+.pill.da-chua.lop-nay {
+  background: var(--green-soft, rgba(48, 209, 88, 0.15));
+  color: var(--green, #30d158);
+}
 
 .stars {
   color: var(--amber);
@@ -1396,6 +1406,71 @@ mark.hit {
   max-height: 100%;
   overflow-y: auto;
   animation: pop 0.18s ease;
+}
+/* BẢN GIÁO VIÊN: hộp Ra đề cần chỗ cho bảng phân bố và danh sách 18 câu. */
+.modal.rong {
+  width: min(980px, 100%);
+}
+
+/* ==========================================================================
+   BẢN GIÁO VIÊN — hộp Ra đề hàng tháng
+   ========================================================================== */
+.ra-de-bang {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 520px;
+}
+.ra-de-bang th,
+.ra-de-bang td {
+  text-align: left;
+  padding: 4px 10px 4px 0;
+  border-bottom: 1px solid var(--surface-3);
+  font-size: 14px;
+}
+.ra-de-so {
+  width: 72px;
+  padding: 4px 8px;
+}
+/* Tổng lệch với số câu đề thật thì nhuộm đỏ cho thấy ngay. */
+.ra-de-lech {
+  color: #ff6b81;
+  font-weight: 700;
+}
+.ra-de-ds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ra-de-cau {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.ra-de-so-cau {
+  min-width: 44px;
+  font-weight: 700;
+  color: var(--blue);
+}
+.ra-de-cau-chinh {
+  flex: 1;
+  min-width: 0;
+}
+.ra-de-luu {
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.ra-de-luu-ten {
+  background: none;
+  border: 0;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
 }
 @keyframes pop {
   from {

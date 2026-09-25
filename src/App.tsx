@@ -13,6 +13,7 @@ import {
 
 import mark from "./assets/mark.svg";
 import About from "./components/About";
+import RaDe from "./views/giao-vien/RaDe";
 import BadgeCelebration from "./components/BadgeCelebration";
 import { computeOverview } from "./lib/stats";
 import { useStore } from "./state/useStore";
@@ -110,6 +111,8 @@ export default function App() {
   // tập với đúng chủ đề đó, để ôn lại cả mảng kiến thức chứ không vá từng bài.
   const [reviewFocus, setReviewFocus] = useState<TopicFocus | null>(null);
   const [showAbout, setShowAbout] = useState(false);
+  // BẢN GIÁO VIÊN: hộp Ra đề hàng tháng.
+  const [showRaDe, setShowRaDe] = useState(false);
 
   /* --- Vuốt ngang để đổi tab --- */
   const soTab = TABS.findIndex((entry) => entry.key === tab);
@@ -122,6 +125,10 @@ export default function App() {
   useEffect(() => {
     return platform.onBack(() => {
       // Có gì đang mở đè lên thì đóng cái đó trước, đúng như người ta mong đợi.
+      if (showRaDe) {
+        setShowRaDe(false);
+        return;
+      }
       if (showAbout) {
         setShowAbout(false);
         return;
@@ -140,7 +147,7 @@ export default function App() {
       // Đang ở màn gốc rồi thì mới thật sự thoát.
       platform.exitApp();
     });
-  }, [showAbout, store]);
+  }, [showAbout, showRaDe, store]);
 
   const view = useMemo(
     () => (store.data ? computeOverview(store.data) : null),
@@ -296,11 +303,14 @@ export default function App() {
             view={view}
             sync={sync}
             onAbout={() => setShowAbout(true)}
+            onOpenRaDe={() => setShowRaDe(true)}
           />
         </KeepAlive>
       </main>
 
       {showAbout && <About onClose={() => setShowAbout(false)} />}
+      {/* BẢN GIÁO VIÊN: hộp trộn đề hàng tháng, mở từ Cài đặt. */}
+      {showRaDe && <RaDe store={store} onClose={() => setShowRaDe(false)} />}
 
       {/* Chạm mốc lúc đang học thì popup này nhảy lên; người dùng tự tắt. */}
       {store.justEarned.length > 0 && (

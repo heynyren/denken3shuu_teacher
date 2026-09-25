@@ -17,8 +17,8 @@ import type { CatalogItem, SubjectKey } from "./types";
 export const MINUTES_A = 5;
 export const MINUTES_B = 10;
 
-/** Số hiệu các câu B問題 của từng môn. */
-const B_QUESTIONS: Record<SubjectKey, ReadonlySet<number>> = {
+/** Số hiệu các câu B問題 của từng môn. (Export cho phần ra đề bản giáo viên.) */
+export const B_QUESTIONS: Record<SubjectKey, ReadonlySet<number>> = {
   riron: new Set([15, 16, 17, 18]),
   kikai: new Set([15, 16, 17, 18]),
   denryoku: new Set([15, 16, 17]),
