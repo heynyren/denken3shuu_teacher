@@ -8,6 +8,11 @@ Lõi giống hệt bản học sinh, thêm hai chức năng chỉ dành cho ngư
   và dạng bài (tính toán / điền khuyết / luận) như lịch sử ra đề. Có chế độ giới
   hạn theo các phần đã dạy trong tháng: app gợi ý phân bố số câu, sửa được rồi
   mới trộn. Đề lưu trong app, copy ra Markdown kèm link đề gốc để đi biên soạn.
+  Đề đã lưu còn xuất được **đoạn Apps Script tạo Google Form (Quiz)** để gửi
+  sinh viên: câu hỏi chỉ trỏ tới đề PDF gốc trên shiken.or.jp và ghi rõ làm 問
+  nào, link denken-ou (có lời giải) chỉ hiện ở phản hồi sau khi nộp. Form tự
+  chấm điểm theo số câu (thang 100), có ô Họ tên + thu email nên biết ai nộp và
+  lúc nào. Chỉ việc dán đoạn mã vào script.google.com rồi Run.
 - **Đánh dấu bài đã chữa theo lớp / niên khoá** (mặc định 2026-2027 và
   2027-2028, lớp BK và ĐL-ĐN — thêm bớt trong Cài đặt): bài đã chữa có tích
   riêng trong Danh sách bài, lọc được theo đã/chưa chữa.

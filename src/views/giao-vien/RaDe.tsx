@@ -7,7 +7,7 @@
  * copy được ra Markdown (kèm link đề gốc) để đi biên soạn.
  */
 
-import { ClipboardCopy, Dices, RefreshCw, Trash2, X } from "lucide-react";
+import { ClipboardCopy, Dices, FileCode2, RefreshCw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Ic } from "../../components/ui/icon";
@@ -30,6 +30,7 @@ import {
 } from "../../lib/giao-vien/ra-de";
 import type { DeTao } from "../../lib/giao-vien/types";
 import { deTaoMarkdown } from "../../lib/giao-vien/xuat-md";
+import { deTaoAppsScript } from "../../lib/giao-vien/xuat-appscript";
 
 function newId(): string {
   return `detao-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -156,6 +157,17 @@ export default function RaDe({ store, onClose }: { store: Store; onClose(): void
     try {
       await navigator.clipboard.writeText(deTaoMarkdown(de));
       setThongBao(t("Đã copy đề dạng Markdown vào clipboard."));
+    } catch {
+      setThongBao(t("Không copy được — trình duyệt chặn clipboard."));
+    }
+  };
+
+  const copyAppsScript = async (de: DeTao) => {
+    try {
+      await navigator.clipboard.writeText(deTaoAppsScript(de));
+      setThongBao(
+        t("Đã copy mã Apps Script. Dán vào script.google.com rồi Run hàm taoForm để tạo Google Form."),
+      );
     } catch {
       setThongBao(t("Không copy được — trình duyệt chặn clipboard."));
     }
@@ -412,7 +424,7 @@ export default function RaDe({ store, onClose }: { store: Store; onClose(): void
           )}
 
           {/* Đề đã lưu */}
-          <DeTaoList store={store} onCopy={copyMarkdown} />
+          <DeTaoList store={store} onCopy={copyMarkdown} onAppsScript={copyAppsScript} />
         </div>
       </div>
     </div>
@@ -424,9 +436,11 @@ export default function RaDe({ store, onClose }: { store: Store; onClose(): void
 function DeTaoList({
   store,
   onCopy,
+  onAppsScript,
 }: {
   store: Store;
   onCopy(de: DeTao): void;
+  onAppsScript(de: DeTao): void;
 }) {
   const data = store.data!;
   const [moRong, setMoRong] = useState<string | null>(null);
@@ -462,6 +476,13 @@ function DeTaoList({
                 )}
               </button>
               <span className="spacer" />
+              <button
+                className="icon-btn"
+                title={t("Copy mã Apps Script để tạo Google Form (Quiz) gửi sinh viên")}
+                onClick={() => onAppsScript(de)}
+              >
+                <Ic i={FileCode2} />
+              </button>
               <button className="icon-btn" title={t("Copy đề dạng Markdown")} onClick={() => onCopy(de)}>
                 <Ic i={ClipboardCopy} />
               </button>
